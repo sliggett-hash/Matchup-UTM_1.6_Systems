@@ -1,3 +1,122 @@
+I’d recommend using Canva because it makes the sizing and exporting very simple.
+Create a 325 × 325 design. In Canva, choose Create a design → Custom size → 325 px × 325 px. Make sure the units say px, not inches.
+Keep every card square. Don’t make some 325×325 and others different sizes. Every definition and picture card should use the exact same dimensions.
+Use a simple background. White or another very light background is safest. Avoid busy textures or backgrounds that compete with the information.
+Leave some empty space around the edges. Keep important text and pictures roughly 20–25 pixels away from the edge. That prevents cards from looking cramped when they enlarge.
+For definition cards, make the text BIG. Students are viewing these on Chromebooks. Use a clear font such as Arial, Aptos, Montserrat, or similar. Avoid decorative fonts. Try to use the largest font that allows the definition to fit comfortably.
+Keep definitions short whenever possible. Instead of squeezing a paragraph onto the card, use concise wording. For example, this:
+A structure that controls the activities of the cell and contains genetic material.
+is much better than several sentences of explanation.
+Center the text vertically and horizontally unless there is a reason not to. Definition cards look much cleaner when all of them follow the same layout.
+For picture cards, make the object as large as practical. A microscope image, organelle, diagram, graph, etc. should occupy most of the card. Avoid tiny pictures floating in a lot of blank space.
+Avoid putting the answer on the picture. If a card is supposed to match “mitochondrion,” don't have the word MITOCHONDRION printed on the picture unless identifying labels are part of the lesson.
+Duplicate the first card instead of starting over. Once your first card looks good, use Duplicate page in Canva. Replace the text or image but leave the size, margins, font, and general layout alone. This gives the whole set a professional appearance.
+Make your definition cards first. If you have 10 definitions, create 10 pages and name them conceptually:
+A
+B
+C
+D
+E
+F
+G
+H
+I
+J
+Then create your picture cards:
+01
+02
+03
+04
+05
+06
+07
+08
+09
+10
+For a 6-pair game, you'd only need:
+A.png – F.png
+01.png – 06.png
+For a 15-pair game:
+A.png – O.png
+01.png – 15.png
+Download them as PNG files. In Canva choose Share → Download → PNG. PNG is what I recommend for these cards because text and diagrams stay crisp.
+Rename the files carefully. This is probably the most important technical step. The filenames need to be exactly:
+A.png
+B.png
+C.png
+...
+
+01.png
+02.png
+03.png
+...
+Not:
+A (1).png
+cardA.png
+1.png
+Picture 01.png
+The game expects the filenames specified in game.json.
+Make your answer key separately. Before uploading anything, write something simple like:
+A = 04
+B = 01
+C = 07
+D = 03
+E = 06
+F = 02
+G = 10
+H = 05
+I = 08
+J = 09
+That becomes the pairs portion of game.json.
+Upload all the PNGs into the GitHub images folder. They should look like:
+images/
+    A.png
+    B.png
+    C.png
+    D.png
+    E.png
+    F.png
+    G.png
+    H.png
+    I.png
+    J.png
+
+    01.png
+    02.png
+    03.png
+    04.png
+    05.png
+    06.png
+    07.png
+    08.png
+    09.png
+    10.png
+Then edit only game.json. For example:
+"pairs": {
+  "A": "04",
+  "B": "01",
+  "C": "07",
+  "D": "03",
+  "E": "06",
+  "F": "02",
+  "G": "10",
+  "H": "05",
+  "I": "08",
+  "J": "09"
+}
+And you're done.
+A good rule for your students' cards is:
+325 × 325 PNG + large readable content + consistent layout + exact filenames.
+Since your current cards are already working well, I would not change their dimensions. I'd actually make 325 × 325 px the standard for your Match-Up system going forward.
+
+
+
+
+
+
+
+
+
 PUT YOUR CARD IMAGES IN THIS FOLDER
 
 Default 10-pair naming:

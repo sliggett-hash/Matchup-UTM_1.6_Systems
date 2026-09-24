@@ -164,3 +164,151 @@ I=05
 J=07"
 
 Then ChatGPT can prepare the game.json and check your files.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+THIS MIGHT BE MORE UP TO DATE INSTRUCTIONS:
+
+Once the V6 template is working, your normal process for every new game becomes:
+Duplicate the template repository
+e.g. Matchup-Template → Matchup-Cells
+then another copy → Matchup-Genetics
+another → Matchup-Ecology
+Replace the card images
+definitions: A.png–J.png
+pictures: 01.png–10.png
+Edit only game.json
+Change:
+the unique id
+the title
+the instructions if desired
+the answer key in pairs
+For example:
+{
+  "id": "cell-organelles-01",
+  "title": "CELL ORGANELLES MATCH-UP",
+  "instructions": "Choose a definition, then choose the matching organelle.",
+  "workerUrl": "https://matchup-universal.sliggett.workers.dev",
+  "columns": 5,
+  "definitionExtension": ".png",
+  "imageExtension": ".png",
+  "pairs": {
+    "A": "06",
+    "B": "02",
+    "C": "09",
+    "D": "01",
+    "E": "04",
+    "F": "10",
+    "G": "03",
+    "H": "08",
+    "I": "05",
+    "J": "07"
+  }
+}
+Turn on GitHub Pages for that copied repo.
+Put the new GitHub Pages URL into Schoology.
+That’s it.
+You should not need to:
+make another Cloudflare Worker
+make another D1 database
+touch the Worker code
+change the database bindings
+rebuild the scoring system
+rebuild the leaderboard logic
+Each game stays separate because of its unique game.json ID.
+So your reusable system becomes:
+Matchup-Template
+      ↓ duplicate
+Matchup-Cells
+Matchup-Genetics
+Matchup-Ecology
+Matchup-HumanBody
+...
+And all of them can use the same:
+matchup-universal.sliggett.workers.dev
+and the same D1 database.
+That is the whole point of the template: from now on, making a new game should mostly be swap images + edit one JSON file + publish.
+
+
+
+
+
+**** MORE OR LESS CARDS ****
+The template currently supports 2–20 matching pairs, and the number of matches automatically comes from game.json.
+For example, if you only had 6 pairs, your game.json could simply contain:
+"columns": 3,
+
+"pairs": {
+  "A": "01",
+  "B": "02",
+  "C": "03",
+  "D": "04",
+  "E": "05",
+  "F": "06"
+}
+You would upload:
+A.png – F.png
+01.png – 06.png
+The game would automatically say:
+Matches: 0/6
+and finish after six correct matches.
+For 15 pairs, you could do:
+"columns": 5,
+
+"pairs": {
+  "A": "01",
+  "B": "02",
+  "C": "03",
+  "D": "04",
+  "E": "05",
+  "F": "06",
+  "G": "07",
+  "H": "08",
+  "I": "09",
+  "J": "10",
+  "K": "11",
+  "L": "12",
+  "M": "13",
+  "N": "14",
+  "O": "15"
+}
+And upload:
+A.png – O.png
+01.png – 15.png
+Everything else adjusts automatically: number of cards, match counter, game completion, server verification, leaderboard, scoring, and answer key.
+The columns setting just controls how many cards appear across the screen. I’d generally use:
+4–6 pairs → columns: 3
+7–12 pairs → columns: 4 or 5
+13–20 pairs → columns: 5
+One important advantage of the V6 system is that each game has its own leaderboard, so a 20-pair game's much larger possible score doesn't compete against a 6-pair game's scores.
+So next time, you can give me 7 pairs, 12 pairs, 18 pairs, etc., and we just put exactly those pairs in game.json. No rebuilding the game engine.

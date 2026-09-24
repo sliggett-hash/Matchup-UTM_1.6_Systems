@@ -1,0 +1,21 @@
+MATCH-UP V6 — QUICK REFERENCE
+
+NORMAL NEW GAME:
+1. New GitHub repo
+2. Copy index.html
+3. Copy game_TEMPLATE.json → rename to game.json
+4. Upload card PNGs into images/
+5. Change game.json:
+   - id
+   - title
+   - answer-key pairs
+6. Turn on GitHub Pages
+7. Add the Pages URL to Schoology
+
+Cloudflare work required for each new game:
+NONE
+
+Shared Worker:
+https://matchup-leaderboard.sliggett.workers.dev
+
+The game ID is what gives each game its own leaderboard.

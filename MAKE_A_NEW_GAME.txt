@@ -1,0 +1,166 @@
+HOW TO MAKE YOUR NEXT MATCH-UP GAME
+===================================
+
+After V6 is installed, this is the normal workflow.
+
+YOU NEED ONLY:
+  index.html
+  game.json
+  images/
+
+
+EXAMPLE: CELL ORGANELLES
+-------------------------
+1. Create a new GitHub repository, for example:
+
+   Matchup-Cells
+
+2. Copy the V6 index.html into that repository.
+
+3. Copy game_TEMPLATE.json into the repository and rename it:
+
+   game.json
+
+4. Upload your card images into:
+
+   images/
+
+
+EDIT ONLY game.json
+--------------------
+Example:
+
+{
+  "id": "cell-organelles-01",
+  "title": "CELL ORGANELLES MATCH-UP",
+  "instructions": "Choose a definition, then choose the matching organelle.",
+  "workerUrl": "https://matchup-leaderboard.sliggett.workers.dev",
+  "columns": 5,
+  "definitionExtension": ".png",
+  "imageExtension": ".png",
+  "pairs": {
+    "A": "06",
+    "B": "02",
+    "C": "09",
+    "D": "01",
+    "E": "04",
+    "F": "10",
+    "G": "03",
+    "H": "08",
+    "I": "05",
+    "J": "07"
+  }
+}
+
+
+THE IMPORTANT PART
+------------------
+Every game needs a UNIQUE id.
+
+Good:
+  cell-organelles-01
+  body-systems-02
+  ecology-food-webs-01
+
+Bad:
+  My Game!
+  Cells 1
+
+Use:
+  lowercase letters
+  numbers
+  hyphens
+
+
+THE ANSWER KEY
+--------------
+The pairs object IS the answer key.
+
+For example:
+
+  "A": "06"
+
+means:
+  definition card A.png
+matches
+  picture card 06.png
+
+
+FILENAMES
+---------
+If game.json contains:
+
+  "A": "06"
+
+then these files must exist:
+
+  images/A.png
+  images/06.png
+
+
+TURN ON GITHUB PAGES
+--------------------
+Repository:
+Settings
+→ Pages
+→ Deploy from a branch
+→ main
+→ /(root)
+
+Your game will then have an address such as:
+
+https://sliggett-hash.github.io/Matchup-Cells/
+
+
+SCHOOLOGY
+---------
+Add a Link and use the GitHub Pages URL.
+
+Keep:
+  Display in Schoology
+
+If Schoology's frame is too small, students can open it in a new tab.
+
+
+LEADERBOARDS
+------------
+Nothing else is required.
+
+The Worker reads the game's unique ID and automatically keeps that
+game's leaderboard separate.
+
+Each game gets its own:
+  All-Time Record
+  Today's Champion
+  Live Top 10
+
+The expiration rules remain:
+  #1 today → until midnight America/Detroit time
+  #2–#10 → 30 minutes
+  all-time record → permanent
+
+
+WHAT TO SEND CHATGPT NEXT TIME
+-------------------------------
+The quickest request would be something like:
+
+"I want a new Match-Up game using our V6 template.
+
+Title: Cell Organelles
+Game ID: cell-organelles-01
+
+I attached definition cards A-J and picture cards 01-10.
+
+Answer key:
+A=06
+B=02
+C=09
+D=01
+E=04
+F=10
+G=03
+H=08
+I=05
+J=07"
+
+Then ChatGPT can prepare the game.json and check your files.

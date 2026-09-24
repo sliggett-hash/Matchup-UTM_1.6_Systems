@@ -1,0 +1,21 @@
+{
+  "id": "matchup-original-01",
+  "title": "MATCH-UP",
+  "instructions": "Choose a definition, then choose the picture that matches it.",
+  "workerUrl": "https://matchup-universal.sliggett.workers.dev",
+  "columns": 5,
+  "definitionExtension": ".png",
+  "imageExtension": ".png",
+  "pairs": {
+    "A": "01",
+    "B": "02",
+    "C": "03",
+    "D": "04",
+    "E": "05",
+    "F": "06",
+    "G": "07",
+    "H": "08",
+    "I": "09",
+    "J": "10"
+  }
+}

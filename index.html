@@ -1,0 +1,1607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Match-Up</title>
+
+  <style>
+    :root{
+      --ink:#233142;
+      --muted:#64748b;
+      --border:#d9dee8;
+      --accent:#2563eb;
+      --good:#15803d;
+      --bad:#dc2626;
+      --definition-panel:#f4f7ff;
+      --image-panel:#fffaf2;
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:Arial, Helvetica, sans-serif;
+      color:var(--ink);
+      background:linear-gradient(180deg,#f8fafc 0%,#eef2f7 100%);
+    }
+
+    .game{
+      width:min(1080px,98vw);
+      margin:0 auto;
+      padding:10px 8px 18px;
+    }
+
+    header{
+      text-align:center;
+      margin-bottom:8px;
+    }
+
+    h1{
+      margin:0;
+      font-size:clamp(26px,3.4vw,38px);
+      letter-spacing:.04em;
+    }
+
+    .instructions{
+      margin:4px 0 0;
+      color:var(--muted);
+      font-size:15px;
+    }
+
+    .version-badge{
+      display:inline-block;
+      margin-top:3px;
+      padding:3px 9px;
+      border-radius:999px;
+      background:#fff3cd;
+      border:1px solid #e2bd48;
+      color:#725900;
+      font-size:10px;
+      font-weight:900;
+      letter-spacing:.12em;
+    }
+
+    .scoring-note{
+      margin:4px 0 0;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:700;
+    }
+
+    .stats{
+      display:flex;
+      justify-content:center;
+      flex-wrap:wrap;
+      gap:10px;
+      margin:10px auto 12px;
+    }
+
+    .stat{
+      background:white;
+      border:1px solid var(--border);
+      border-radius:999px;
+      padding:7px 13px;
+      font-size:14px;
+      font-weight:700;
+    }
+
+    .leaderboard-jump{
+      border:0;
+      border-radius:999px;
+      padding:7px 13px;
+      background:#f6c344;
+      color:#3e3100;
+      font-weight:900;
+      font-size:12px;
+      cursor:pointer;
+      box-shadow:0 3px 8px rgba(15,23,42,.12);
+    }
+
+    .leaderboard-jump:hover{
+      filter:brightness(1.04);
+      transform:translateY(-1px);
+    }
+
+    .status{
+      min-height:28px;
+      text-align:center;
+      font-weight:800;
+      font-size:15px;
+      margin:2px 0 9px;
+    }
+
+    .status.good{ color:var(--good); }
+    .status.bad{ color:var(--bad); }
+    .status.neutral{ color:var(--muted); }
+
+    .combo-toast{
+      position:fixed;
+      left:50%;
+      top:22%;
+      transform:translate(-50%,-50%) scale(.8);
+      z-index:1000;
+      pointer-events:none;
+      opacity:0;
+      background:rgba(35,49,66,.94);
+      color:white;
+      padding:12px 22px;
+      border-radius:16px;
+      font-size:clamp(18px,3vw,32px);
+      font-weight:900;
+      text-align:center;
+      box-shadow:0 14px 32px rgba(15,23,42,.28);
+      transition:opacity .16s ease, transform .16s ease;
+    }
+
+    .combo-toast.show{
+      opacity:1;
+      transform:translate(-50%,-50%) scale(1);
+    }
+
+    .load-error{
+      display:none;
+      max-width:900px;
+      margin:0 auto 16px;
+      padding:12px 14px;
+      border:2px solid var(--bad);
+      border-radius:12px;
+      background:white;
+      color:var(--bad);
+      font-weight:700;
+      text-align:center;
+    }
+
+    .load-error.show{ display:block; }
+
+    .section{
+      border:1px solid var(--border);
+      border-radius:20px;
+      padding:10px;
+      margin:0 auto 10px;
+      overflow:visible;
+    }
+
+    .definition-area{ background:var(--definition-panel); }
+    .image-area{ background:var(--image-panel); }
+
+    .section-title{
+      text-align:center;
+      font-size:15px;
+      font-weight:800;
+      letter-spacing:.12em;
+      margin-bottom:9px;
+    }
+
+    .section-subtitle{
+      text-align:center;
+      color:var(--muted);
+      font-size:13px;
+      margin:-6px 0 9px;
+    }
+
+    .cards{
+      display:grid;
+      grid-template-columns:repeat(var(--card-columns,5),minmax(0,1fr));
+      gap:8px;
+      max-width:760px;
+      margin:0 auto;
+    }
+
+    .card{
+      position:relative;
+      aspect-ratio:1/1;
+      min-width:0;
+      padding:0;
+      border:2px solid var(--border);
+      border-radius:16px;
+      overflow:hidden;
+      background:white;
+      cursor:pointer;
+      box-shadow:0 3px 8px rgba(15,23,42,.10);
+      z-index:1;
+      transform-origin:center;
+      transition:transform .18s ease, box-shadow .18s ease, border-color .12s ease;
+    }
+
+    /* Chromebook/laptop hover zoom.
+       Edge cards zoom inward so they stay inside the Schoology frame. */
+    @media (hover:hover) and (pointer:fine){
+      .card:hover{
+        transform:scale(1.85);
+        z-index:100;
+        box-shadow:0 18px 36px rgba(15,23,42,.30);
+      }
+
+      /* First row opens downward; second row opens upward. */
+      .card:nth-child(-n+5){ transform-origin:center top; }
+      .card:nth-child(n+6){ transform-origin:center bottom; }
+
+      /* Outer columns open toward the middle of the page. */
+      .card:nth-child(5n+1){ transform-origin:left center; }
+      .card:nth-child(5n){ transform-origin:right center; }
+
+      /* Corners combine both directions. */
+      .card:nth-child(1){ transform-origin:left top; }
+      .card:nth-child(5){ transform-origin:right top; }
+      .card:nth-child(6){ transform-origin:left bottom; }
+      .card:nth-child(10){ transform-origin:right bottom; }
+    }
+
+    /* Slightly gentler zoom if Schoology gives the page a narrow frame. */
+    @media (hover:hover) and (pointer:fine) and (max-width:900px){
+      .card:hover{ transform:scale(1.65); }
+    }
+
+    .card:focus-visible{
+      outline:4px solid #60a5fa;
+      outline-offset:3px;
+    }
+
+    .card img{
+      display:block;
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      background:white;
+    }
+
+    .card.selected{
+      border-color:var(--accent);
+      box-shadow:0 0 0 4px rgba(37,99,235,.28), 0 7px 16px rgba(15,23,42,.15);
+    }
+
+    .card.matched{
+      border-color:var(--good);
+      box-shadow:0 0 0 4px rgba(21,128,61,.25), 0 7px 16px rgba(15,23,42,.13);
+      cursor:default;
+    }
+
+    .card.wrong{
+      border-color:var(--bad);
+      box-shadow:0 0 0 4px rgba(220,38,38,.25);
+    }
+
+    .card.matched::after{
+      content:"✓ MATCH";
+      position:absolute;
+      left:50%;
+      bottom:7px;
+      transform:translateX(-50%);
+      background:var(--good);
+      color:white;
+      font-size:11px;
+      font-weight:800;
+      padding:4px 8px;
+      border-radius:999px;
+      white-space:nowrap;
+      pointer-events:none;
+    }
+
+    .card:disabled{
+      opacity:.78;
+    }
+
+    .controls{
+      text-align:center;
+      margin-top:2px;
+    }
+
+    .restart{
+      border:0;
+      border-radius:999px;
+      background:var(--ink);
+      color:white;
+      padding:11px 20px;
+      font-size:15px;
+      font-weight:800;
+      cursor:pointer;
+    }
+
+    .restart:hover{
+      filter:brightness(1.08);
+    }
+
+    .result{
+      display:none;
+      text-align:center;
+      background:white;
+      border:1px solid var(--border);
+      border-radius:20px;
+      padding:20px;
+      margin:16px auto 0;
+      max-width:520px;
+    }
+
+    .result.show{ display:block; }
+    .result h2{ margin:0 0 8px; }
+    .result p{ margin:5px 0; color:var(--muted); }
+
+    .result-grid{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:8px;
+      margin:12px 0 10px;
+    }
+
+    .result-grid > div{
+      background:#f8fafc;
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:8px 5px;
+      font-size:14px;
+    }
+
+    .bonus-summary{
+      font-weight:700;
+    }
+
+    .score-stat{
+      background:#eef6ff;
+      border-color:#b9d7ff;
+    }
+
+    .score{
+      font-size:28px;
+      font-weight:900;
+      color:var(--ink) !important;
+    }
+
+
+    .score-submit{
+      margin:14px auto 4px;
+      padding:14px;
+      border:2px solid #f0c24c;
+      border-radius:14px;
+      background:#fff9e8;
+      text-align:left;
+    }
+
+    .score-submit h3{
+      margin:0 0 5px;
+      text-align:center;
+    }
+
+    .score-submit p{
+      margin:4px 0 10px;
+      text-align:center;
+      font-size:13px;
+    }
+
+    .name-row{
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+
+    .name-row input{
+      flex:1;
+      min-width:0;
+      border:1px solid #c9d0da;
+      border-radius:10px;
+      padding:10px 11px;
+      font-size:16px;
+    }
+
+    .submit-score{
+      border:0;
+      border-radius:10px;
+      padding:10px 13px;
+      background:var(--ink);
+      color:white;
+      font-weight:900;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+
+    .submit-score:disabled{
+      opacity:.5;
+      cursor:default;
+    }
+
+    .submission-status{
+      min-height:20px;
+      margin-top:7px !important;
+      font-weight:800;
+    }
+
+    .leaderboard{
+      max-width:900px;
+      margin:18px auto 10px;
+      background:white;
+      border:1px solid var(--border);
+      border-radius:20px;
+      padding:16px;
+      box-shadow:0 5px 18px rgba(15,23,42,.08);
+    }
+
+    .leaderboard h2{
+      margin:0;
+      text-align:center;
+      font-size:24px;
+      letter-spacing:.04em;
+    }
+
+    .leaderboard-subtitle{
+      margin:4px 0 14px;
+      color:var(--muted);
+      text-align:center;
+      font-size:13px;
+    }
+
+    .record-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-bottom:13px;
+    }
+
+    .record-card{
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:12px;
+      text-align:center;
+      background:#f8fafc;
+    }
+
+    .record-card.all-time{
+      background:#fff8dc;
+      border-color:#e7c85c;
+    }
+
+    .record-card.today{
+      background:#eef8ef;
+      border-color:#9bcba4;
+    }
+
+    .record-label{
+      display:block;
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:.10em;
+      color:var(--muted);
+      margin-bottom:4px;
+    }
+
+    .record-name{
+      display:block;
+      font-size:18px;
+      font-weight:900;
+    }
+
+    .record-score{
+      display:block;
+      margin-top:2px;
+      font-size:20px;
+      font-weight:900;
+    }
+
+    .record-detail{
+      display:block;
+      margin-top:3px;
+      font-size:11px;
+      color:var(--muted);
+    }
+
+    .live-title{
+      margin:12px 0 6px;
+      font-size:14px;
+      font-weight:900;
+      text-align:center;
+      letter-spacing:.08em;
+    }
+
+    .leaderboard-table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:14px;
+    }
+
+    .leaderboard-table th,
+    .leaderboard-table td{
+      padding:8px 7px;
+      border-bottom:1px solid #e5e7eb;
+      text-align:left;
+    }
+
+    .leaderboard-table th{
+      color:var(--muted);
+      font-size:11px;
+      letter-spacing:.08em;
+    }
+
+    .leaderboard-table td:nth-child(1),
+    .leaderboard-table th:nth-child(1){
+      width:42px;
+      text-align:center;
+    }
+
+    .leaderboard-table td:nth-child(3),
+    .leaderboard-table th:nth-child(3),
+    .leaderboard-table td:nth-child(4),
+    .leaderboard-table th:nth-child(4){
+      text-align:right;
+    }
+
+    .champion-row{
+      background:#f0f9f2;
+      font-weight:900;
+    }
+
+    .leaderboard-message{
+      text-align:center;
+      color:var(--muted);
+      padding:14px;
+      font-size:13px;
+    }
+
+    .leaderboard-footer{
+      margin:10px 0 0;
+      text-align:center;
+      color:var(--muted);
+      font-size:11px;
+    }
+
+    .backend-warning{
+      display:none;
+      max-width:900px;
+      margin:10px auto;
+      padding:10px 12px;
+      border:1px solid #d59c18;
+      border-radius:10px;
+      background:#fff7dd;
+      color:#674b00;
+      font-size:12px;
+      font-weight:700;
+      text-align:center;
+    }
+
+    .backend-warning.show{
+      display:block;
+    }
+
+    @media(max-width:650px){
+      .record-grid{
+        grid-template-columns:1fr;
+      }
+
+      .name-row{
+        flex-direction:column;
+      }
+
+      .name-row input,
+      .submit-score{
+        width:100%;
+      }
+    }
+
+    @media(max-width:760px){
+      .game{
+        width:98vw;
+        padding:15px 4px 24px;
+      }
+
+      .section{
+        padding:10px;
+        border-radius:16px;
+      }
+
+      .cards{
+        gap:8px;
+      }
+
+      .card{
+        border-radius:11px;
+      }
+
+      .card.matched::after{
+        font-size:8px;
+        bottom:4px;
+        padding:3px 5px;
+      }
+    }
+
+    @media(max-width:500px){
+      .cards{
+        grid-template-columns:repeat(var(--card-columns,5),minmax(0,1fr));
+        gap:4px;
+      }
+
+      .stats{
+        gap:6px;
+      }
+
+      .stat{
+        padding:6px 9px;
+        font-size:12px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="game">
+    <header>
+      <h1 id="gameTitle">MATCH-UP</h1>
+      <div class="version-badge">UNIVERSAL TEMPLATE • V6</div>
+      <p class="instructions" id="gameInstructions">Choose a definition, then choose the picture that matches it.</p>
+      <p class="scoring-note">Every millisecond counts • Protect your combo • Accuracy and speed MULTIPLY your final score</p>
+
+      <div class="stats">
+        <div class="stat">Matches: <span id="matches">0</span>/<span id="matchTotal">10</span></div>
+        <div class="stat">Mistakes: <span id="mistakes">0</span></div>
+        <div class="stat">Accuracy: <span id="accuracy">100</span>%</div>
+        <div class="stat">Streak: <span id="streak">0</span></div>
+        <div class="stat">Time: <span id="timer">0:00</span></div>
+        <div class="stat score-stat">Score: <span id="score">1000</span></div>
+      </div>
+      <button class="leaderboard-jump" id="leaderboardJump" type="button">🏆 VIEW LEADERBOARD</button>
+    </header>
+
+    <div class="combo-toast" id="comboToast" aria-live="polite"></div>
+    <div class="load-error" id="loadError"></div>
+
+    <div class="status neutral" id="status" aria-live="polite">
+      Choose a definition to begin.
+    </div>
+
+    <section class="section definition-area">
+      <div class="section-title" id="definitionTitle">DEFINITIONS</div>
+      <div class="section-subtitle">Click the definition you want to match.</div>
+      <div class="cards" id="definitionCards"></div>
+    </section>
+
+    <section class="section image-area">
+      <div class="section-title" id="imageTitle">IMAGES</div>
+      <div class="section-subtitle">Then click the matching picture.</div>
+      <div class="cards" id="imageCards"></div>
+    </section>
+
+    <div class="controls">
+      <button class="restart" id="restart" type="button">New Game</button>
+    </div>
+
+    <section class="result" id="result" aria-live="polite">
+      <h2 id="resultTitle">All 10 Matches!</h2>
+      <p id="resultSummary"></p>
+      <div class="result-grid">
+        <div><strong>Time</strong><br><span id="finalTime">0:00</span></div>
+        <div><strong>Accuracy</strong><br><span id="finalAccuracy">100%</span></div>
+        <div><strong>Best Streak</strong><br><span id="bestStreak">0</span></div>
+      </div>
+      <p id="bonusSummary" class="bonus-summary"></p>
+      <p class="score">Final Score: <span id="finalScore">0</span></p>
+
+      <div class="score-submit" id="scoreSubmit">
+        <h3>🏆 Put This Score on the Leaderboard</h3>
+        <p>Use your <strong>first name + last initial</strong>, for example: <strong>Emma R.</strong></p>
+        <div class="name-row">
+          <input id="playerName" maxlength="20" autocomplete="off" placeholder="First name + last initial" aria-label="First name and last initial">
+          <button class="submit-score" id="submitScore" type="button">SUBMIT SCORE</button>
+        </div>
+        <p class="submission-status" id="submissionStatus" aria-live="polite"></p>
+      </div>
+    </section>
+  
+    <div class="backend-warning" id="backendWarning">
+      Leaderboard backend is not connected yet. The game still works, but shared scores will appear after the Worker URL is configured.
+    </div>
+
+    <section class="leaderboard" id="leaderboardSection" aria-labelledby="leaderboardTitle">
+      <h2 id="leaderboardTitle">🏆 MATCH-UP LEADERBOARD</h2>
+      <p class="leaderboard-subtitle">Today's #1 stays until midnight • Places 2–10 stay for 30 minutes • All-time record never expires</p>
+
+      <div class="record-grid">
+        <div class="record-card all-time">
+          <span class="record-label">🏆 ALL-TIME RECORD</span>
+          <span class="record-name" id="allTimeName">—</span>
+          <span class="record-score" id="allTimeScore">No record yet</span>
+          <span class="record-detail" id="allTimeDetail"></span>
+        </div>
+
+        <div class="record-card today">
+          <span class="record-label">👑 TODAY'S CHAMPION</span>
+          <span class="record-name" id="todayName">—</span>
+          <span class="record-score" id="todayScore">No score yet</span>
+          <span class="record-detail" id="todayDetail"></span>
+        </div>
+      </div>
+
+      <div class="live-title">⚡ LIVE TOP 10</div>
+
+      <div id="leaderboardMessage" class="leaderboard-message">Loading leaderboard…</div>
+
+      <table class="leaderboard-table" id="leaderboardTable" hidden>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Student</th>
+            <th>Score</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboardBody"></tbody>
+      </table>
+
+      <p class="leaderboard-footer">Scores refresh automatically. Names are limited to first name + last initial.</p>
+    </section>
+
+</main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      /*
+        MATCH-UP UNIVERSAL TEMPLATE V6
+        --------------------------------
+        THIS FILE SHOULD NOT NEED TO BE EDITED FOR A NEW GAME.
+
+        For a new game, edit game.json instead.
+      */
+
+      const CONFIG_URL = new URL("./game.json", window.location.href);
+      CONFIG_URL.search = "";
+
+      let GAME = null;
+      let PAIRS = [];
+      let definitionIds = [];
+      let imageIds = [];
+      let pairMap = new Map();
+      let LEADERBOARD_API = "";
+
+      // Competition scoring
+      const BASE_CORRECT = 1000;
+      const STREAK_GROWTH = 1.50;
+      const WRONG_BASE_PENALTY = 2000;
+      const WRONG_PENALTY_GROWTH = 1.75;
+      const PERFECT_BONUS = 10000;
+      const SCORE_SCALE = 10;
+
+      const gameTitleEl = document.getElementById("gameTitle");
+      const gameInstructionsEl = document.getElementById("gameInstructions");
+      const definitionTitleEl = document.getElementById("definitionTitle");
+      const imageTitleEl = document.getElementById("imageTitle");
+      const matchTotalEl = document.getElementById("matchTotal");
+
+      const definitionCardsEl = document.getElementById("definitionCards");
+      const imageCardsEl = document.getElementById("imageCards");
+      const matchesEl = document.getElementById("matches");
+      const mistakesEl = document.getElementById("mistakes");
+      const accuracyEl = document.getElementById("accuracy");
+      const streakEl = document.getElementById("streak");
+      const timerEl = document.getElementById("timer");
+      const scoreEl = document.getElementById("score");
+      const statusEl = document.getElementById("status");
+      const restartBtn = document.getElementById("restart");
+      const resultEl = document.getElementById("result");
+      const resultTitleEl = document.getElementById("resultTitle");
+      const resultSummaryEl = document.getElementById("resultSummary");
+      const finalScoreEl = document.getElementById("finalScore");
+      const finalTimeEl = document.getElementById("finalTime");
+      const finalAccuracyEl = document.getElementById("finalAccuracy");
+      const bestStreakEl = document.getElementById("bestStreak");
+      const bonusSummaryEl = document.getElementById("bonusSummary");
+      const loadErrorEl = document.getElementById("loadError");
+      const comboToastEl = document.getElementById("comboToast");
+
+      const leaderboardJumpEl = document.getElementById("leaderboardJump");
+      const leaderboardSectionEl = document.getElementById("leaderboardSection");
+      const leaderboardTitleEl = document.getElementById("leaderboardTitle");
+      const leaderboardTableEl = document.getElementById("leaderboardTable");
+      const leaderboardBodyEl = document.getElementById("leaderboardBody");
+      const leaderboardMessageEl = document.getElementById("leaderboardMessage");
+      const backendWarningEl = document.getElementById("backendWarning");
+
+      const allTimeNameEl = document.getElementById("allTimeName");
+      const allTimeScoreEl = document.getElementById("allTimeScore");
+      const allTimeDetailEl = document.getElementById("allTimeDetail");
+      const todayNameEl = document.getElementById("todayName");
+      const todayScoreEl = document.getElementById("todayScore");
+      const todayDetailEl = document.getElementById("todayDetail");
+
+      const playerNameEl = document.getElementById("playerName");
+      const submitScoreEl = document.getElementById("submitScore");
+      const submissionStatusEl = document.getElementById("submissionStatus");
+
+      let selectedDefinition = null;
+      let selectedDefinitionCard = null;
+      let matches = 0;
+      let mistakes = 0;
+      let rawScore = 0;
+      let currentStreak = 0;
+      let bestStreak = 0;
+      let locked = false;
+
+      let timerStarted = false;
+      let timerFinished = false;
+      let startTime = 0;
+      let elapsedMs = 0;
+      let timerInterval = null;
+      let toastTimer = null;
+
+      let attempts = [];
+      let leaderboardRunPromise = null;
+      let leaderboardRunId = null;
+      let officialResult = null;
+      let scoreSubmitted = false;
+
+      const failedImages = new Set();
+
+      function leaderboardEnabled(){
+        return Boolean(LEADERBOARD_API);
+      }
+
+      function shuffle(items){
+        const copy = [...items];
+
+        for(let i = copy.length - 1; i > 0; i--){
+          const j = Math.floor(Math.random() * (i + 1));
+          [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+
+        return copy;
+      }
+
+      function formatTimeFromMs(ms, showMilliseconds = false){
+        const safeMs = Math.max(0, Number(ms) || 0);
+        const totalSeconds = Math.floor(safeMs / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+
+        if(!showMilliseconds){
+          const tenths = Math.floor((safeMs % 1000) / 100);
+          return `${minutes}:${String(seconds).padStart(2, "0")}.${tenths}`;
+        }
+
+        const milliseconds = Math.floor(safeMs % 1000);
+        return `${minutes}:${String(seconds).padStart(2, "0")}.${String(milliseconds).padStart(3, "0")}`;
+      }
+
+      function formatNumber(value){
+        return Math.round(Number(value) || 0).toLocaleString("en-US");
+      }
+
+      function setStatus(message, kind="neutral"){
+        statusEl.textContent = message;
+        statusEl.className = `status ${kind}`;
+      }
+
+      function showToast(message){
+        if(toastTimer){
+          window.clearTimeout(toastTimer);
+        }
+
+        comboToastEl.textContent = message;
+        comboToastEl.classList.add("show");
+
+        toastTimer = window.setTimeout(() => {
+          comboToastEl.classList.remove("show");
+        }, 750);
+      }
+
+      function validateConfig(config){
+        if(!config || typeof config !== "object"){
+          throw new Error("game.json is not valid.");
+        }
+
+        if(!/^[a-z0-9][a-z0-9-]{2,63}$/.test(config.id || "")){
+          throw new Error("game.json needs a unique lowercase id such as cell-organelles-01.");
+        }
+
+        if(typeof config.title !== "string" || !config.title.trim()){
+          throw new Error("game.json needs a title.");
+        }
+
+        if(!config.pairs || typeof config.pairs !== "object" || Array.isArray(config.pairs)){
+          throw new Error("game.json needs a pairs object.");
+        }
+
+        const defs = Object.keys(config.pairs);
+        const imgs = Object.values(config.pairs);
+
+        if(defs.length < 2 || defs.length > 20){
+          throw new Error("This template supports 2–20 pairs.");
+        }
+
+        if(new Set(defs).size !== defs.length || new Set(imgs).size !== imgs.length){
+          throw new Error("Each definition and image can only appear once in game.json.");
+        }
+
+        if(typeof config.workerUrl !== "string" || !config.workerUrl.startsWith("https://")){
+          throw new Error("game.json needs the Cloudflare workerUrl.");
+        }
+
+        return {
+          ...config,
+          title:config.title.trim(),
+          instructions:
+            typeof config.instructions === "string" && config.instructions.trim()
+              ? config.instructions.trim()
+              : "Choose a definition, then choose the picture that matches it.",
+          columns:
+            Number.isInteger(config.columns) && config.columns >= 2 && config.columns <= 6
+              ? config.columns
+              : 5,
+          definitionExtension:config.definitionExtension || ".png",
+          imageExtension:config.imageExtension || ".png"
+        };
+      }
+
+      async function loadConfig(){
+        const response = await fetch(CONFIG_URL.href + `?t=${Date.now()}`, {
+          cache:"no-store"
+        });
+
+        if(!response.ok){
+          throw new Error(`Could not load game.json (${response.status}).`);
+        }
+
+        const config = validateConfig(await response.json());
+
+        GAME = config;
+        LEADERBOARD_API = config.workerUrl.replace(/\/+$/, "");
+
+        definitionIds = Object.keys(config.pairs);
+        imageIds = Object.values(config.pairs);
+        PAIRS = definitionIds.map(definition => ({
+          definition,
+          image:config.pairs[definition]
+        }));
+        pairMap = new Map(PAIRS.map(pair => [pair.definition, pair.image]));
+
+        document.documentElement.style.setProperty(
+          "--card-columns",
+          String(config.columns)
+        );
+
+        gameTitleEl.textContent = config.title;
+        document.title = config.title;
+        gameInstructionsEl.textContent = config.instructions;
+        matchTotalEl.textContent = String(PAIRS.length);
+
+        definitionTitleEl.textContent =
+          config.definitionHeading ||
+          `DEFINITIONS • ${definitionIds[0]}–${definitionIds[definitionIds.length - 1]}`;
+
+        imageTitleEl.textContent =
+          config.imageHeading ||
+          `IMAGES • ${Number(imageIds[0]) || imageIds[0]}–${Number(imageIds[imageIds.length - 1]) || imageIds[imageIds.length - 1]}`;
+
+        leaderboardTitleEl.textContent =
+          `🏆 ${config.title} LEADERBOARD`;
+
+        backendWarningEl.classList.remove("show");
+      }
+
+      function calculateAccuracy(){
+        const totalAttempts = matches + mistakes;
+        if(totalAttempts === 0) return 100;
+        return (matches / totalAttempts) * 100;
+      }
+
+      function accuracyMultiplier(){
+        const a = calculateAccuracy() / 100;
+        return 1 + 2 * Math.pow(a, 10);
+      }
+
+      function speedMultiplier(ms = elapsedMs){
+        return 1 + 2 * Math.exp(-(ms / 1000) / 90);
+      }
+
+      function correctPointsFor(streak){
+        const value =
+          BASE_CORRECT *
+          Math.pow(STREAK_GROWTH, streak - 1);
+
+        return Math.round(value / 10) * 10;
+      }
+
+      function wrongPenaltyFor(mistakeNumber){
+        const value =
+          WRONG_BASE_PENALTY *
+          Math.pow(WRONG_PENALTY_GROWTH, mistakeNumber - 1);
+
+        return Math.round(value / 10) * 10;
+      }
+
+      function calculateLocalFinalScore(){
+        const perfectBonus = mistakes === 0 ? PERFECT_BONUS : 0;
+
+        return Math.floor(
+          Math.max(0, rawScore + perfectBonus) *
+          accuracyMultiplier() *
+          speedMultiplier() *
+          SCORE_SCALE
+        );
+      }
+
+      function startTimer(){
+        if(timerStarted) return;
+
+        timerStarted = true;
+        timerFinished = false;
+        startTime = performance.now();
+
+        if(leaderboardEnabled()){
+          leaderboardRunPromise = apiFetch("/run", {
+            method:"POST",
+            body:JSON.stringify({
+              configUrl:CONFIG_URL.href
+            })
+          }).then(data => {
+            leaderboardRunId = data.runId;
+            return data;
+          }).catch(error => {
+            console.warn("Leaderboard run could not start:", error);
+            leaderboardRunId = null;
+            return null;
+          });
+        }
+
+        timerInterval = window.setInterval(updateTimer, 50);
+      }
+
+      function updateTimer(){
+        if(!timerStarted || timerFinished) return;
+
+        elapsedMs = performance.now() - startTime;
+        timerEl.textContent = formatTimeFromMs(elapsedMs, false);
+      }
+
+      function stopTimer(){
+        if(!timerStarted) return;
+
+        updateTimer();
+        timerFinished = true;
+
+        if(timerInterval){
+          window.clearInterval(timerInterval);
+          timerInterval = null;
+        }
+      }
+
+      function updateStats(){
+        matchesEl.textContent = String(matches);
+        mistakesEl.textContent = String(mistakes);
+        accuracyEl.textContent = String(Math.round(calculateAccuracy()));
+        streakEl.textContent = String(currentStreak);
+        scoreEl.textContent = formatNumber(Math.max(0, rawScore));
+      }
+
+      function reportImageFailure(filename){
+        failedImages.add(filename);
+
+        loadErrorEl.innerHTML =
+          `Could not load: <strong>${[...failedImages].join(", ")}</strong>`;
+
+        loadErrorEl.classList.add("show");
+      }
+
+      function imageFilename(type, id){
+        if(type === "definition"){
+          return `${id}${GAME.definitionExtension}`;
+        }
+
+        return `${id}${GAME.imageExtension}`;
+      }
+
+      function createCard(type, id){
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "card";
+        card.dataset.type = type;
+        card.dataset.id = id;
+
+        const img = document.createElement("img");
+        const filename = imageFilename(type, id);
+
+        img.src = `./images/${filename}`;
+        img.alt =
+          type === "definition"
+            ? `Definition ${id}`
+            : `Picture ${Number(id) || id}`;
+
+        img.draggable = false;
+
+        img.addEventListener(
+          "error",
+          () => reportImageFailure(filename),
+          { once:true }
+        );
+
+        card.appendChild(img);
+        card.addEventListener("click", () => handleCardClick(card));
+
+        return card;
+      }
+
+      function renderCards(){
+        definitionCardsEl.replaceChildren();
+        imageCardsEl.replaceChildren();
+
+        shuffle(definitionIds).forEach(id => {
+          definitionCardsEl.appendChild(createCard("definition", id));
+        });
+
+        shuffle(imageIds).forEach(id => {
+          imageCardsEl.appendChild(createCard("image", id));
+        });
+      }
+
+      function expectedImageFor(definitionId){
+        return pairMap.get(definitionId) || null;
+      }
+
+      function selectDefinition(card){
+        startTimer();
+
+        if(selectedDefinitionCard){
+          selectedDefinitionCard.classList.remove("selected");
+        }
+
+        selectedDefinition = card.dataset.id;
+        selectedDefinitionCard = card;
+        card.classList.add("selected");
+
+        setStatus(
+          `Definition ${selectedDefinition} selected. Choose its matching picture.`
+        );
+      }
+
+      function handleCardClick(card){
+        if(locked || card.classList.contains("matched")) return;
+
+        if(card.dataset.type === "definition"){
+          selectDefinition(card);
+          return;
+        }
+
+        if(!selectedDefinitionCard){
+          setStatus("Choose a definition first.", "bad");
+          return;
+        }
+
+        attempts.push({
+          definition:selectedDefinition,
+          image:card.dataset.id
+        });
+
+        const isMatch =
+          card.dataset.id === expectedImageFor(selectedDefinition);
+
+        if(isMatch){
+          matches += 1;
+          currentStreak += 1;
+          bestStreak = Math.max(bestStreak, currentStreak);
+
+          const points = correctPointsFor(currentStreak);
+          rawScore += points;
+
+          selectedDefinitionCard.classList.remove("selected");
+          selectedDefinitionCard.classList.add("matched");
+          selectedDefinitionCard.disabled = true;
+
+          card.classList.add("matched");
+          card.disabled = true;
+
+          updateStats();
+
+          if(currentStreak >= 3){
+            showToast(`${currentStreak} IN A ROW!  +${formatNumber(points)}`);
+          } else {
+            showToast(`+${formatNumber(points)}`);
+          }
+
+          setStatus(
+            `Correct! +${formatNumber(points)} points • ${currentStreak} correct in a row.`,
+            "good"
+          );
+
+          selectedDefinition = null;
+          selectedDefinitionCard = null;
+
+          if(matches === PAIRS.length){
+            finishGame();
+          }
+
+          return;
+        }
+
+        mistakes += 1;
+
+        const penalty = wrongPenaltyFor(mistakes);
+        rawScore = Math.max(0, rawScore - penalty);
+        currentStreak = 0;
+
+        updateStats();
+
+        locked = true;
+        card.classList.add("wrong");
+        showToast(`COMBO BROKEN  −${formatNumber(penalty)}`);
+
+        setStatus(
+          `Not a match. −${formatNumber(penalty)} points and the streak resets. Your definition is still selected.`,
+          "bad"
+        );
+
+        window.setTimeout(() => {
+          card.classList.remove("wrong");
+          locked = false;
+        }, 500);
+      }
+
+      async function finishGame(){
+        stopTimer();
+
+        const localFinalScore = calculateLocalFinalScore();
+
+        finalScoreEl.textContent = formatNumber(localFinalScore);
+        finalTimeEl.textContent = formatTimeFromMs(elapsedMs, true);
+        finalAccuracyEl.textContent = `${Math.round(calculateAccuracy())}%`;
+        bestStreakEl.textContent = String(bestStreak);
+
+        resultSummaryEl.textContent =
+          `${PAIRS.length} matches completed in ${formatTimeFromMs(elapsedMs, true)} with ${mistakes} ${mistakes === 1 ? "mistake" : "mistakes"}.`;
+
+        const localPerfect = mistakes === 0 ? PERFECT_BONUS : 0;
+        const localParts = [
+          `Raw ${formatNumber(rawScore)}`,
+          `Accuracy ×${accuracyMultiplier().toFixed(2)}`,
+          `Speed ×${speedMultiplier().toFixed(2)}`
+        ];
+
+        if(localPerfect){
+          localParts.splice(1, 0, `Perfect +${formatNumber(localPerfect)}`);
+        }
+
+        bonusSummaryEl.textContent = localParts.join(" • ");
+
+        if(mistakes === 0 && elapsedMs <= 60000){
+          resultTitleEl.textContent = "LIGHTNING PERFECT!";
+        } else if(mistakes === 0){
+          resultTitleEl.textContent = "PERFECT RUN!";
+        } else if(calculateAccuracy() >= 90 && elapsedMs <= 90000){
+          resultTitleEl.textContent = "TURBO FINISH!";
+        } else {
+          resultTitleEl.textContent = "ALL MATCHES COMPLETE!";
+        }
+
+        scoreEl.textContent = formatNumber(localFinalScore);
+        resultEl.classList.add("show");
+
+        if(leaderboardEnabled()){
+          submissionStatusEl.textContent = "Verifying your official score…";
+          submitScoreEl.disabled = true;
+
+          try{
+            if(leaderboardRunPromise){
+              await leaderboardRunPromise;
+            }
+
+            if(!leaderboardRunId){
+              throw new Error("The leaderboard run did not start.");
+            }
+
+            const data = await apiFetch("/finish", {
+              method:"POST",
+              body:JSON.stringify({
+                runId:leaderboardRunId,
+                attempts
+              })
+            });
+
+            officialResult = data;
+
+            finalScoreEl.textContent = formatNumber(data.score);
+            scoreEl.textContent = formatNumber(data.score);
+            finalTimeEl.textContent = formatTimeFromMs(data.elapsedMs, true);
+            finalAccuracyEl.textContent = `${Math.round(data.accuracy)}%`;
+            bestStreakEl.textContent = String(data.bestStreak);
+
+            bonusSummaryEl.textContent =
+              `Official server score • Raw ${formatNumber(data.rawScore)} • Accuracy ×${data.accuracyMultiplier.toFixed(2)} • Speed ×${data.speedMultiplier.toFixed(2)}`;
+
+            if(data.leaderboardEligible){
+              submissionStatusEl.textContent =
+                "Official score verified. Enter your name to submit it.";
+              submitScoreEl.disabled = false;
+            }else{
+              submissionStatusEl.textContent =
+                "Official score verified, but this run is too fast to qualify for the leaderboard.";
+              submitScoreEl.disabled = true;
+            }
+
+            setStatus(
+              `Official score verified: ${formatNumber(data.score)}`,
+              "good"
+            );
+          }catch(error){
+            console.error(error);
+            submissionStatusEl.textContent =
+              "Leaderboard verification failed. Your game score is still shown above.";
+            submitScoreEl.disabled = true;
+          }
+        }else{
+          submissionStatusEl.textContent =
+            "Leaderboard backend is not configured.";
+          submitScoreEl.disabled = true;
+        }
+
+        resultEl.scrollIntoView({
+          behavior:"smooth",
+          block:"nearest"
+        });
+      }
+
+      function normalizeName(value){
+        return value.trim().replace(/\s+/g, " ");
+      }
+
+      async function submitScore(){
+        if(!leaderboardEnabled() || !officialResult || scoreSubmitted){
+          return;
+        }
+
+        const displayName = normalizeName(playerNameEl.value);
+
+        if(displayName.length < 2 || displayName.length > 20){
+          submissionStatusEl.textContent =
+            "Please enter your first name + last initial (20 characters maximum).";
+          return;
+        }
+
+        if(!/^[A-Za-zÀ-ÖØ-öø-ÿ'’.\- ]+$/.test(displayName)){
+          submissionStatusEl.textContent =
+            "Please use letters, spaces, apostrophes, hyphens, and a period only.";
+          return;
+        }
+
+        submitScoreEl.disabled = true;
+        submissionStatusEl.textContent = "Submitting score…";
+
+        try{
+          const data = await apiFetch("/submit", {
+            method:"POST",
+            body:JSON.stringify({
+              runId:leaderboardRunId,
+              displayName
+            })
+          });
+
+          scoreSubmitted = true;
+          playerNameEl.disabled = true;
+          submitScoreEl.textContent = "SCORE SUBMITTED";
+
+          if(data.isAllTimeRecord){
+            submissionStatusEl.textContent =
+              "🏆 NEW ALL-TIME RECORD!";
+          } else if(data.isDailyChampion){
+            submissionStatusEl.textContent =
+              "👑 You are today's champion!";
+          } else {
+            submissionStatusEl.textContent =
+              `⚡ Score submitted. Current live rank: #${data.rank || "—"}`;
+          }
+
+          await loadLeaderboard();
+
+          leaderboardSectionEl.scrollIntoView({
+            behavior:"smooth",
+            block:"start"
+          });
+        }catch(error){
+          console.error(error);
+          submitScoreEl.disabled = false;
+          submissionStatusEl.textContent =
+            error.message || "Score submission failed. Please try again.";
+        }
+      }
+
+      function startGame(){
+        if(!GAME) return;
+
+        if(timerInterval){
+          window.clearInterval(timerInterval);
+          timerInterval = null;
+        }
+
+        if(toastTimer){
+          window.clearTimeout(toastTimer);
+          toastTimer = null;
+        }
+
+        selectedDefinition = null;
+        selectedDefinitionCard = null;
+        matches = 0;
+        mistakes = 0;
+        rawScore = 0;
+        currentStreak = 0;
+        bestStreak = 0;
+        locked = false;
+
+        timerStarted = false;
+        timerFinished = false;
+        startTime = 0;
+        elapsedMs = 0;
+
+        attempts = [];
+        leaderboardRunPromise = null;
+        leaderboardRunId = null;
+        officialResult = null;
+        scoreSubmitted = false;
+
+        failedImages.clear();
+
+        timerEl.textContent = "0:00.0";
+        comboToastEl.classList.remove("show");
+        resultEl.classList.remove("show");
+        loadErrorEl.classList.remove("show");
+        loadErrorEl.textContent = "";
+
+        playerNameEl.value = "";
+        playerNameEl.disabled = false;
+        submitScoreEl.disabled = true;
+        submitScoreEl.textContent = "SUBMIT SCORE";
+        submissionStatusEl.textContent = "";
+
+        updateStats();
+        renderCards();
+
+        setStatus("Choose a definition to begin. The timer starts on your first selection.");
+      }
+
+      async function apiFetch(path, options = {}){
+        const response = await fetch(`${LEADERBOARD_API}${path}`, {
+          ...options,
+          headers:{
+            "Content-Type":"application/json",
+            ...(options.headers || {})
+          }
+        });
+
+        let data = null;
+
+        try{
+          data = await response.json();
+        }catch{
+          data = {};
+        }
+
+        if(!response.ok){
+          throw new Error(data.error || `Leaderboard request failed (${response.status}).`);
+        }
+
+        return data;
+      }
+
+      function setRecordCard(prefix, record, emptyText){
+        const nameEl =
+          prefix === "allTime" ? allTimeNameEl : todayNameEl;
+        const scoreCardEl =
+          prefix === "allTime" ? allTimeScoreEl : todayScoreEl;
+        const detailEl =
+          prefix === "allTime" ? allTimeDetailEl : todayDetailEl;
+
+        if(!record){
+          nameEl.textContent = "—";
+          scoreCardEl.textContent = emptyText;
+          detailEl.textContent = "";
+          return;
+        }
+
+        nameEl.textContent = record.displayName;
+        scoreCardEl.textContent = formatNumber(record.score);
+        detailEl.textContent =
+          `${formatTimeFromMs(record.elapsedMs, true)} • ${Math.round(record.accuracy)}% accuracy`;
+      }
+
+      async function loadLeaderboard(){
+        if(!GAME || !leaderboardEnabled()){
+          backendWarningEl.classList.add("show");
+          leaderboardMessageEl.textContent =
+            "Leaderboard is not configured.";
+          leaderboardTableEl.hidden = true;
+          return;
+        }
+
+        try{
+          const data = await apiFetch(
+            `/leaderboard?gameId=${encodeURIComponent(GAME.id)}`,
+            { method:"GET" }
+          );
+
+          backendWarningEl.classList.remove("show");
+
+          setRecordCard(
+            "allTime",
+            data.allTime,
+            "No all-time record yet"
+          );
+
+          setRecordCard(
+            "today",
+            data.todayChampion,
+            "No score today yet"
+          );
+
+          leaderboardBodyEl.replaceChildren();
+
+          if(!data.top10 || data.top10.length === 0){
+            leaderboardMessageEl.textContent =
+              "No live scores yet. Be the first!";
+            leaderboardTableEl.hidden = true;
+            return;
+          }
+
+          data.top10.forEach((entry, index) => {
+            const row = document.createElement("tr");
+
+            if(entry.isChampion){
+              row.classList.add("champion-row");
+            }
+
+            const rank = document.createElement("td");
+            const name = document.createElement("td");
+            const score = document.createElement("td");
+            const time = document.createElement("td");
+
+            rank.textContent =
+              entry.isChampion ? "👑" : String(index + 1);
+
+            name.textContent = entry.displayName;
+            score.textContent = formatNumber(entry.score);
+            time.textContent = formatTimeFromMs(entry.elapsedMs, true);
+
+            row.append(rank, name, score, time);
+            leaderboardBodyEl.appendChild(row);
+          });
+
+          leaderboardMessageEl.textContent = "";
+          leaderboardTableEl.hidden = false;
+        }catch(error){
+          console.error(error);
+          leaderboardMessageEl.textContent =
+            "Leaderboard is temporarily unavailable.";
+          leaderboardTableEl.hidden = true;
+        }
+      }
+
+      async function boot(){
+        try{
+          await loadConfig();
+          startGame();
+          await loadLeaderboard();
+
+          window.setInterval(loadLeaderboard, 20000);
+        }catch(error){
+          console.error(error);
+          setStatus(error.message, "bad");
+          backendWarningEl.classList.add("show");
+          backendWarningEl.textContent =
+            `Game setup error: ${error.message}`;
+        }
+      }
+
+      restartBtn.addEventListener("click", startGame);
+      submitScoreEl.addEventListener("click", submitScore);
+
+      playerNameEl.addEventListener("keydown", event => {
+        if(event.key === "Enter"){
+          submitScore();
+        }
+      });
+
+      leaderboardJumpEl.addEventListener("click", () => {
+        leaderboardSectionEl.scrollIntoView({
+          behavior:"smooth",
+          block:"start"
+        });
+      });
+
+      boot();
+    })();
+  </script>
+</body>
+</html>

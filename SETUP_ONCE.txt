@@ -1,0 +1,129 @@
+MATCH-UP UNIVERSAL TEMPLATE V6
+ONE-TIME CLOUDFLARE UPGRADE
+================================
+
+You only do this ONCE.
+
+After this upgrade, new games do NOT need a new Worker or a new database.
+
+WHAT CHANGES
+------------
+V6 adds separate leaderboard tables for each GAME ID.
+
+Examples:
+  cells-01
+  body-systems-01
+  genetics-01
+  ecology-01
+
+All of those games can use:
+  Worker:
+  https://matchup-leaderboard.sliggett.workers.dev
+
+  Same D1 database:
+  your existing Match-Up leaderboard database
+
+
+STEP 1 — ADD THE NEW MULTI-GAME TABLES
+---------------------------------------
+Cloudflare Dashboard:
+Storage & Databases
+→ D1
+→ your Match-Up database
+→ Console
+
+Open:
+  schema_multigame_v6.sql
+
+Copy the SQL and execute it in the D1 Console.
+
+Then enter:
+  /tables
+
+You should now see four NEW table names:
+  mg_runs
+  mg_scores
+  mg_daily_champions
+  mg_all_time_record
+
+Your old V5 tables may still be there. That is okay.
+V6 deliberately uses new table names so this upgrade does not destroy them.
+
+
+STEP 2 — UPDATE YOUR EXISTING WORKER
+-------------------------------------
+Cloudflare Dashboard:
+Workers & Pages
+→ matchup-leaderboard
+→ Edit Code
+
+Delete the current Worker code.
+
+Open:
+  worker_v6.js
+
+Copy all of it into the Cloudflare editor.
+
+Deploy the Worker.
+
+Do NOT create a new Worker.
+Do NOT create a new D1 database.
+Keep the existing D1 binding named exactly:
+  DB
+
+
+STEP 3 — TEST THE WORKER
+-------------------------
+Open:
+
+https://matchup-leaderboard.sliggett.workers.dev/health
+
+You should see:
+
+{"ok":true,"version":"universal-leaderboard-v6"}
+
+Then try:
+
+https://matchup-leaderboard.sliggett.workers.dev/leaderboard?gameId=matchup-original-01
+
+You should see an empty leaderboard JSON response.
+
+
+STEP 4 — UPGRADE YOUR CURRENT GITHUB GAME
+------------------------------------------
+For your existing Matchup repository, upload/replace:
+
+  index.html
+  game.json
+
+Keep your existing:
+  images/
+
+Your current images already match the included game.json:
+  A → 01
+  B → 02
+  ...
+  J → 10
+
+Then test:
+
+https://sliggett-hash.github.io/Matchup/?v=6
+
+You should see:
+  UNIVERSAL TEMPLATE • V6
+
+
+THAT IS THE LAST CLOUDFLARE SETUP
+----------------------------------
+For every future Match-Up game, you only copy:
+  index.html
+  game.json
+  images/
+
+You DO NOT:
+- create another Worker
+- create another D1 database
+- add another D1 binding
+- change worker_v6.js
+
+Each game's unique game.json ID automatically creates a separate leaderboard.

@@ -1,0 +1,32 @@
+PUT YOUR CARD IMAGES IN THIS FOLDER
+
+Default 10-pair naming:
+Definitions:
+A.png
+B.png
+C.png
+D.png
+E.png
+F.png
+G.png
+H.png
+I.png
+J.png
+
+Pictures:
+01.png
+02.png
+03.png
+04.png
+05.png
+06.png
+07.png
+08.png
+09.png
+10.png
+
+The filenames must exactly match the IDs in game.json.
+
+You may use 2–20 pairs.
+The template supports PNG by default, but game.json can change the
+definitionExtension and imageExtension if needed.

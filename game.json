@@ -1,6 +1,6 @@
 {
-  "id": "matchup-original-01",
-  "title": "MATCH-UP",
+  "id": "matchup-systems-01.6",
+  "title": "1.6 SYSTEMS MATCH-UP",
   "instructions": "Choose a definition, then choose the picture that matches it.",
   "workerUrl": "https://matchup-universal.sliggett.workers.dev",
   "columns": 5,
@@ -15,7 +15,6 @@
     "F": "06",
     "G": "07",
     "H": "08",
-    "I": "09",
-    "J": "10"
+    "I": "09"
   }
 }

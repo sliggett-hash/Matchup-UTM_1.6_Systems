@@ -724,7 +724,7 @@
         <tbody id="leaderboardBody"></tbody>
       </table>
 
-      <p class="leaderboard-footer">Leaderboard loads when you view it and after a score is submitted. Names are limited to first name + last initial.</p>
+      <p class="leaderboard-footer">Leaderboard loads only when you click VIEW LEADERBOARD. Names are limited to first name + last initial.</p>
     </section>
 
 </main>
@@ -1385,12 +1385,10 @@
               `⚡ Score submitted. Current live rank: #${data.rank || "—"}`;
           }
 
-          await loadLeaderboard();
-
-          leaderboardSectionEl.scrollIntoView({
-            behavior:"smooth",
-            block:"start"
-          });
+          // HIGH-REPLAY MODE: do not automatically query the full leaderboard
+          // after every submitted run. The submit response already tells the
+          // student whether they are champion, all-time record, or their rank.
+          // They can use VIEW LEADERBOARD when they actually want the full board.
         }catch(error){
           console.error(error);
           submitScoreEl.disabled = false;

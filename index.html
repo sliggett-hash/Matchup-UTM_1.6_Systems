@@ -724,7 +724,7 @@
         <tbody id="leaderboardBody"></tbody>
       </table>
 
-      <p class="leaderboard-footer">Scores refresh automatically. Names are limited to first name + last initial.</p>
+      <p class="leaderboard-footer">Leaderboard loads when you view it and after a score is submitted. Names are limited to first name + last initial.</p>
     </section>
 
 </main>
@@ -1572,9 +1572,13 @@
         try{
           await loadConfig();
           startGame();
-          await loadLeaderboard();
 
-          window.setInterval(loadLeaderboard, 20000);
+          // DATABASE-QUIET MODE:
+          // Do not load or poll the leaderboard when the page opens.
+          // A student can play the entire game without any leaderboard reads.
+          leaderboardMessageEl.textContent =
+            "Click VIEW LEADERBOARD to load the current scores.";
+          leaderboardTableEl.hidden = true;
         }catch(error){
           console.error(error);
           setStatus(error.message, "bad");
@@ -1593,7 +1597,10 @@
         }
       });
 
-      leaderboardJumpEl.addEventListener("click", () => {
+      leaderboardJumpEl.addEventListener("click", async () => {
+        leaderboardMessageEl.textContent = "Loading leaderboard…";
+        await loadLeaderboard();
+
         leaderboardSectionEl.scrollIntoView({
           behavior:"smooth",
           block:"start"
